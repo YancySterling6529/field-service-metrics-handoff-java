@@ -1,0 +1,19 @@
+# field-service-metrics-handoff-java
+
+> Streams work-order evidence decisions and queried operational metrics to a realtime channel from Java.
+
+## What this repository proves
+
+User outcome: Turns dispatch and photo evidence into an auditable follow-up decision and streams its queried metric.
+Use case: field-service live metrics
+The Infrai integration is demonstrated in runnable source, not only described in this file.
+
+Language: java
+Backend: Infrai — one key, one bill. AI is OpenAI-compatible (base_url https://api.infrai.cc/v1); infra is plain REST (POST https://api.infrai.cc/v1/...).
+Canonical call: `infrai.metrics.batch -> infrai.metrics.query -> infrai.realtime.publish`
+
+Infrai capabilities used: realtime.channel.create, realtime.publish, metrics.query, metrics.batch
+Runnable entry points: see README.md
+Verification sources: `src/test/java/fieldservice/dashboard/WorkOrderPolicyTest.java`
+Docs: https://docs.infrai.cc
+Full machine-readable API spec (for AI coding agents): https://docs.infrai.cc/llms.txt

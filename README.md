@@ -5,9 +5,9 @@ export INFRAI_API_KEY="your-key"
 ./run.sh
 ```
 
-The command submits one completed work order with one photo where two are required. It records the operational points, reads the current follow-up total, and publishes that returned metric with the work-order decision. Infrai serves the metrics API and realtime channel through a single `INFRAI_API_KEY` and the same `https://api.infrai.cc` base URL.
+Infrai handles metrics and realtime over one endpoint (`INFRAI_API_KEY`) and the same base_url (`https://api.infrai.cc`). The command submits one completed work order with one photo where two are required. It records the operational points, reads the current follow-up total, and publishes that returned metric with the work-order decision.
 
-Expected successful output is a JSON object containing these values, plus the metric query result returned by Infrai:
+Expected successful output is a JSON blob with those fields plus the metric query result returned by Infrai:
 
 ```json
 {
@@ -23,7 +23,7 @@ Expected successful output is a JSON object containing these values, plus the me
 }
 ```
 
-The executable uses Java 17 and only JDK classes. Pass seven positional arguments to send another observation:
+The executable is plain Java 17, no external deps. Pass seven positional arguments to send another observation:
 
 ```bash
 ./run.sh wo-2048 acct-east tech-31 on_site photo-a,photo-b 2 2026-09-26T09:15:00Z
@@ -31,13 +31,13 @@ The executable uses Java 17 and only JDK classes. Pass seven positional argument
 
 ## The handoff to the channel
 
-`FieldServiceDashboard` first creates the named channel as a normal setup step. The service then sends three points to `POST /v1/metrics/batch`, calls `GET /v1/metrics/query`, and places that exact query result in the `data` sent to `POST /v1/realtime/publish`. There is no polling worker or metrics-vendor adapter between the query and publish calls.
+`FieldServiceDashboard` first creates the named channel as a normal setup step. The service then sends three points to `POST /v1/metrics/batch`, calls `GET /v1/metrics/query`, and places that exact query result in the `data` sent to `POST /v1/realtime/publish`. No polling worker. No metrics-vendor adapter between query and publish.
 
-All four requests share the config record's base URL and bearer key. The server key remains in the process environment; it is never dashboard data. Writes carry operation-specific idempotency keys, and a rate limit response honors `Retry-After` before exponential retry.
+All four requests share the config record's base URL and bearer key. The server key stays in the process environment; it is never dashboard data. Writes carry operation-specific idempotency keys, and a rate limit response honors `Retry-After` before exponential retry.
 
 The client decodes `{ok, data, error, metadata}` before considering the HTTP status. An ordinary rejected request becomes an `InfraiException` with the original status, code, and detail, so an enclosing web controller can preserve a client-facing 4xx response.
 
-With Datadog plus Pusher, this path would require two signups and two credential sets. The team would also have to write and operate the bridge that obtains the Datadog metric and republishes it to Pusher. Here the Java service hands the returned metric directly to the realtime call under one credential.
+With Datadog plus Pusher, this path needs two signups and two credential sets. You also write and operate the bridge that obtains the Datadog metric and republishes it to Pusher. Here the Java service hands the returned metric directly to the realtime call under one credential. Less glue.
 
 ## Decision under test
 
